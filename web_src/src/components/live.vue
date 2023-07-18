@@ -17,8 +17,9 @@
                  :style="liveStyle" :class="{redborder:playerIdx == (i-1)}"
                  @click="playerIdx = (i-1)">
               <div v-if="!videoUrl[i-1]" style="color: #ffffff;font-size: 30px;font-weight: bold;">{{ i }}</div>
-              <player ref="player" v-else :videoUrl="videoUrl[i-1]" fluent autoplay @screenshot="shot"
-                      @destroy="destroy"/>
+              <!-- <player ref="player" v-else :videoUrl="videoUrl[i-1]" fluent autoplay @screenshot="shot"
+                      @destroy="destroy"/> -->
+              <player ref="player" v-else :videoUrl="videoUrl[i-1]"/>
             </div>
           </div>
         </el-main>
@@ -29,7 +30,7 @@
 
 <script>
 import uiHeader from "../layout/UiHeader.vue";
-import player from './common/jessibuca.vue'
+import player from './common/mpegts.vue'
 import DeviceTree from './common/DeviceTree.vue'
 
 export default {
@@ -57,7 +58,6 @@ export default {
   created() {
     this.checkPlayByParam()
   },
-
   computed: {
     liveStyle() {
       let style = {width: '100%', height: '100%'}
@@ -70,8 +70,8 @@ export default {
           break
       }
       this.$nextTick(() => {
+        const player = this.$refs.player
         for (let i = 0; i < this.spilt; i++) {
-          const player = this.$refs.player
           player && player[i] && player[i].updatePlayerDomSize()
         }
       })
@@ -86,6 +86,7 @@ export default {
         if (!that.$refs['player' + i]) {
           continue
         }
+
         this.$nextTick(() => {
           if (that.$refs['player' + i] instanceof Array) {
             that.$refs['player' + i][0].resize()
@@ -126,6 +127,7 @@ export default {
       //   return
       // }
       this.save(itemData)
+      
       let deviceId = itemData.deviceId;
       // this.isLoging = true;
       let channelId = itemData.channelId;
@@ -140,11 +142,14 @@ export default {
         if (res.data.code === 0 && res.data.data) {
           let videoUrl;
           if (location.protocol === "https:") {
+            // videoUrl = res.data.data.https_flv;
             videoUrl = res.data.data.wss_flv;
           } else {
+            // videoUrl = res.data.data.flv;
             videoUrl = res.data.data.ws_flv;
           }
           itemData.playUrl = videoUrl;
+
           that.setPlayUrl(videoUrl, idxTmp);
         } else {
           that.$message.error(res.data.msg);
@@ -156,11 +161,12 @@ export default {
     },
     setPlayUrl(url, idx) {
       this.$set(this.videoUrl, idx, url)
+      console.log('-----videoUrl---', this.videoUrl);
+
       let _this = this
       setTimeout(() => {
         window.localStorage.setItem('videoUrl', JSON.stringify(_this.videoUrl))
       }, 100)
-
     },
     checkPlayByParam() {
       let {deviceId, channelId} = this.$route.query
