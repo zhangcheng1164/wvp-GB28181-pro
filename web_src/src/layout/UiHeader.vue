@@ -1,13 +1,19 @@
 <template>
   <div id="UiHeader">
-
-    <el-menu router :default-active="activeIndex" menu-trigger="click" background-color="#001529" text-color="#fff"
-             active-text-color="#1890ff" mode="horizontal">
-
+    <el-menu
+      style="border: none !important;"
+      router
+      :default-active="activeIndex"
+      menu-trigger="click"
+      background-color="#001529"
+      text-color="#fff"
+      active-text-color="#1890ff"
+      mode="vertical"
+    >
       <el-menu-item index="/console">控制台</el-menu-item>
       <el-menu-item index="/live">分屏监控</el-menu-item>
       <el-menu-item index="/deviceList">国标设备</el-menu-item>
-      <el-menu-item index="/map">电子地图</el-menu-item>
+      <!-- <el-menu-item index="/map">电子地图</el-menu-item> -->
       <el-menu-item index="/pushVideoList">推流列表</el-menu-item>
       <el-menu-item index="/streamProxyList">拉流代理</el-menu-item>
       <el-menu-item index="/cloudRecord">云端录像</el-menu-item>
@@ -22,7 +28,7 @@
       <!--              <el-menu-item index="/setting/media">媒体服务</el-menu-item>-->
       <!--            </el-submenu>-->
       <!--            <el-menu-item style="float: right;" @click="loginout">退出</el-menu-item>-->
-      <el-submenu index="" style="float: right;">
+      <!-- <el-submenu index="" style="float: right;">
         <template slot="title">欢迎，{{ username }}</template>
         <el-menu-item @click="openDoc">在线文档</el-menu-item>
         <el-menu-item>
@@ -30,9 +36,27 @@
         </el-menu-item>
         <el-menu-item @click="changePassword">修改密码</el-menu-item>
         <el-menu-item @click="loginout">注销</el-menu-item>
-      </el-submenu>
+      </el-submenu> -->
     </el-menu>
     <changePasswordDialog ref="changePasswordDialog"></changePasswordDialog>
+    <el-dropdown
+      @command="handleCommand"
+      style="position: fixed; top: 15px; right: 25px;"
+    >
+      <span class="el-dropdown-link"> 欢迎，{{ username }} </span>
+      <el-dropdown-menu slot="dropdown">
+        <!-- <el-dropdown-item command="doc">在线文档</el-dropdown-item> -->
+        <el-dropdown-item>
+          <el-switch
+            v-model="alarmNotify"
+            inactive-text="报警信息推送"
+            @change="alarmNotifyChannge"
+          ></el-switch>
+        </el-dropdown-item>
+        <el-dropdown-item command="changePassword">修改密码</el-dropdown-item>
+        <el-dropdown-item command="loginout">注销</el-dropdown-item>
+      </el-dropdown-menu>
+    </el-dropdown>
   </div>
 </template>
 
@@ -50,7 +74,7 @@ export default {
       alarmNotify: false,
       sseSource: null,
       username: userService.getUser().username,
-      activeIndex: this.$route.path,
+      activeIndex: this.$route.meta.activePath,
       editUser: userService.getUser() ? userService.getUser().role.id === 1 : false
     };
   },
@@ -68,23 +92,45 @@ export default {
     this.alarmNotify = this.getAlarmSwitchStatus() === "true";
     this.sseControl();
   },
+  watch: {
+    // 每当 question 改变时，这个函数就会执行
+    $route() {
+      this.activeIndex = this.$route.meta.activePath;
+    }
+  },
   methods: {
+    handleCommand(command) {
+      switch (command) {
+        case "doc":
+          this.openDoc();
+          break;
+        case "changePassword":
+          this.changePassword();
+          break;
+        case "loginout":
+          this.loginout();
+          break;
+
+        default:
+          break;
+      }
+    },
     loginout() {
       this.$axios({
         method: 'get',
         url: "/api/user/logout"
       }).then((res) => {
-        // 删除用户信息，回到登录页面
+          // 删除用户信息，回到登录页面
         userService.clearUserInfo()
         this.$router.push('/login');
-        if (this.sseSource != null) {
-          this.sseSource.close();
-        }
+          if (this.sseSource != null) {
+            this.sseSource.close();
+          }
 
       }).catch((error) => {
         console.error("登出失败")
         console.error(error)
-      });
+        });
     },
     changePassword() {
       this.$refs.changePasswordDialog.openDialog()
@@ -115,14 +161,14 @@ export default {
           console.log("收到信息：" + evt.data);
         });
         this.sseSource.addEventListener('open', function (e) {
-          console.log("SSE连接打开.");
+            console.log("SSE连接打开.");
         }, false);
         this.sseSource.addEventListener('error', function (e) {
-          if (e.target.readyState == EventSource.CLOSED) {
-            console.log("SSE连接关闭");
-          } else {
-            console.log(e.target.readyState);
-          }
+            if (e.target.readyState == EventSource.CLOSED) {
+              console.log("SSE连接关闭");
+            } else {
+              console.log(e.target.readyState);
+            }
         }, false);
       } else {
         if (this.sseSource != null) {
@@ -154,7 +200,7 @@ export default {
     }
   },
 
-}
+  }
 
 </script>
 <style>
@@ -173,5 +219,9 @@ export default {
 #UiHeader .el-menu-item.is-active {
   color: #fff !important;
   background-color: #1890ff !important;
+}
+
+.el-dropdown-link {
+  cursor: pointer;
 }
 </style>

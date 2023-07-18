@@ -1,5 +1,5 @@
 <template>
-  <div id="devicePosition" style="width:100vw; height: 91vh">
+  <div id="devicePosition" style="width:100%; height: 91vh">
     <el-container v-loading="loading" style="height: 91vh;" element-loading-text="拼命加载中">
       <el-aside width="300px" style="background-color: #ffffff">
         <DeviceTree :clickEvent="clickEvent" :contextMenuEvent="contextMenuEvent"></DeviceTree>

@@ -1,5 +1,5 @@
 <template>
-    <div id="devicePosition" style="width: 100vw; height: 91vh;">
+    <div id="devicePosition" style="width: 100%; height: 91vh;">
       <el-container v-if="onOff" style="height: 91vh;" v-loading="isLoging">
         <el-aside width="auto" style="background-color: #ffffff">
           <DeviceTree ref="deviceTree" :clickEvent="clickEvent" :contextMenuEvent="contextmenuEventHandler" ></DeviceTree>

@@ -1,27 +1,65 @@
 <template>
-  <el-container style="height: 100%">
-    <el-header>
-      <ui-header/>
+  <el-container>
+    <el-header
+      style="padding: 0; font-size: 12px; height: 50px; background: #fff; display: flex;"
+    >
+      <div
+        style="background: #001529; width: 200px; color: #fff; line-height: 50px; font-size: 24px; font-weight: bold;"
+      >
+        <img :src="dashLogo" style="width: 90%; margin-top: 9px;"/>
+      </div>
+      <div
+        style="border-bottom: 1px solid #eee; width: calc(100vw - 200px); display: flex; align-items: center; padding-left: 20px;"
+      >
+        <el-breadcrumb separator="/">
+          <el-breadcrumb-item
+            :to="{ path: breadcrumb.path }"
+            v-for="breadcrumb of breadcrumbs"
+            :key="breadcrumb.label"
+          >
+            {{ breadcrumb.label }}
+          </el-breadcrumb-item>
+        </el-breadcrumb>
+      </div>
     </el-header>
-    <el-main>
-      <el-container>
+
+    <el-container style="height: calc(100vh - 50px)">
+      <el-aside width="198px" style="background-color: #001529;">
+        <ui-header />
+      </el-aside>
+      <el-main style="padding: 0 !important">
         <transition name="fade">
           <router-view></router-view>
         </transition>
-      </el-container>
-    </el-main>
+      </el-main>
+    </el-container>
   </el-container>
 </template>
 
 <script>
 import uiHeader from "./UiHeader.vue";
+import dashLogo from "../assets/dash_logo.png";
 
 export default {
   name: "index",
   components: {
-    uiHeader
+    uiHeader,
   },
-}
+  data() {
+    return {
+      breadcrumbs: [],
+      dashLogo,
+    };
+  },
+  mounted() {
+    this.breadcrumbs = this.$route.meta.breadcrumbs || [];
+  },
+  watch: {
+    $route() {
+      this.breadcrumbs = this.$route.meta.breadcrumbs || [];
+    }
+  }
+};
 </script>
 <style>
 body{

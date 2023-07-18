@@ -43,52 +43,100 @@ export default new VueRouter({
         {
           path: '/console',
           component: console,
+          meta: {
+            activePath: '/console',
+            breadcrumbs: [{ label: '控制台' }]
+          }
         },
         {
           path: '/live',
           component: live,
+          meta: {
+            activePath: '/live',
+            breadcrumbs: [{ label: '分屏监控' }]
+          }
         },
         {
           path: '/deviceList',
           component: deviceList,
+          meta: {
+            activePath: '/deviceList',
+            breadcrumbs: [{ label: '国标设备' }]
+          }
         },
         {
           path: '/pushVideoList',
           component: pushVideoList,
+          meta: {
+            activePath: '/pushVideoList',
+            breadcrumbs: [{ label: '推流列表' }]
+          }
         },
         {
           path: '/streamProxyList',
           component: streamProxyList,
+          meta: {
+            activePath: '/streamProxyList',
+            breadcrumbs: [{ label: '拉流列表' }]
+          }
         },
         {
           path: '/channelList/:deviceId/:parentChannelId/',
           name: 'channelList',
           component: channelList,
+          meta: {
+            activePath: '/deviceList',
+            breadcrumbs: [{ label: '国标设备' }, { label: '通道列表' }]
+          }
         },
         {
           path: '/gbRecordDetail/:deviceId/:channelId/',
           name: 'gbRecordDetail',
           component: gbRecordDetail,
+          meta: {
+            activePath: '/deviceList',
+            breadcrumbs: [
+              { label: '国标设备' },
+              { label: '通道列表' },
+              { label: '国标录像' }
+            ]
+          }
         },
         {
           path: '/parentPlatformList/:count/:page',
           name: 'parentPlatformList',
           component: parentPlatformList,
+          meta: {
+            activePath: '/parentPlatformList/15/1',
+            breadcrumbs: [{ label: '国标级联' }]
+          }
         },
         {
           path: '/map/:deviceId/:parentChannelId/:count/:page',
           name: 'map',
           component: map,
+          meta: {
+            activePath: '/map',
+            breadcrumbs: [{ label: '电子地图' }]
+          }
         },
         {
           path: '/cloudRecord',
           name: 'cloudRecord',
           component: cloudRecord,
+          meta: {
+            activePath: '/cloudRecord',
+            breadcrumbs: [{ label: '云端录像' }]
+          }
         },
         {
           path: '/mediaServerManger',
           name: 'mediaServerManger',
           component: mediaServerManger,
+          meta: {
+            activePath: '/mediaServerManger',
+            breadcrumbs: [{ label: '节点管理' }]
+          }
         },
         {
           path: '/setting/web',
@@ -109,11 +157,19 @@ export default new VueRouter({
           path: '/map',
           name: 'map',
           component: map,
+          meta: {
+            activePath: '/map',
+            breadcrumbs: [{ label: '电子地图' }]
+          }
         },
         {
           path: '/userManager',
           name: 'userManager',
           component: userManager,
+          meta: {
+            activePath: '/userManager',
+            breadcrumbs: [{ label: '用户管理' }]
+          }
         }
         ]
     },
