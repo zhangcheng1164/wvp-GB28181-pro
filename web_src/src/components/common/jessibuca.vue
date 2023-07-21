@@ -90,18 +90,25 @@ export default {
       let options = {};
       console.log("hasAudio  " + this.hasAudio)
 
-      jessibucaPlayer[this._uid] = new window.Jessibuca(Object.assign(
+      jessibucaPlayer[this._uid] = new window.JessibucaPro(Object.assign(
         {
           container: this.$refs.container,
-          autoWasm: true,
+          showPerformance:true,
+          decoder:'static/js/jessibuca-pro-demo/decoder-pro-simd.js',
+          videoBuffer: 0.1, // 缓存时长
+          videoBufferDelay: 0.2, //
+          text: "",
+          debug: false,
+          debugLevel: "debug",
+          heartTimeoutReplayUseLastFrameShow: true,
+          useCanvasRender: false,
+          useWebGPU: true,
           background: "",
           controlAutoHide: false,
-          debug: false,
-          decoder: "static/js/jessibuca/decoder.js",
           forceNoOffscreen: true,
           hasAudio: typeof (this.hasAudio) == "undefined" ? true : this.hasAudio,
           hasVideo: true,
-          heartTimeout: 5,
+          heartTimeout: 10,
           heartTimeoutReplay: true,
           heartTimeoutReplayTimes: 3,
           hiddenAutoPause: false,
@@ -128,17 +135,19 @@ export default {
           showBandwidth: false,
           supportDblclickFullscreen: false,
           timeout: 10,
-          useMSE: location.hostname !== "localhost" && location.protocol !== "https:",
+          // useMSE: location.hostname !== "localhost" && location.protocol !== "https:",
           useOffscreen: false,
-          useWCS: location.hostname === "localhost" || location.protocol === "https",
+          // useWCS: location.hostname === "localhost" || location.protocol === "https",
+          useMSE: true,
+          autoWasm: true,
+          useSIMD: true,
           useWebFullScreen: false,
-          videoBuffer: 0,
           wasmDecodeAudioSyncVideo: true,
           wasmDecodeErrorReplay: true,
-          wcsUseVideoRender: true
+          wcsUseVideoRender: true,
         },
         options
-      ));
+        ));
       let jessibuca = jessibucaPlayer[this._uid];
       let _this = this;
       jessibuca.on("load", function () {
@@ -230,16 +239,16 @@ export default {
     playBtnClick: function (event) {
       this.play(this.videoUrl)
     },
-    play: function (url) {
+    play: async function (url) {
       console.log(url)
       if (jessibucaPlayer[this._uid]) {
-        this.destroy();
+        await this.destroy();
       }
       this.create();
       jessibucaPlayer[this._uid].on("play", () => {
         this.playing = true;
         this.loaded = true;
-        this.quieting = jessibuca.quieting;
+        // this.quieting = jessibuca.quieting;
       });
       if (jessibucaPlayer[this._uid].hasLoaded()) {
         jessibucaPlayer[this._uid].play(url);
@@ -273,9 +282,9 @@ export default {
         jessibucaPlayer[this._uid].cancelMute();
       }
     },
-    destroy: function () {
+    destroy: async function () {
       if (jessibucaPlayer[this._uid]) {
-        jessibucaPlayer[this._uid].destroy();
+        await jessibucaPlayer[this._uid].destroy();
       }
       if (document.getElementById("buttonsBox") == null) {
         this.$refs.container.appendChild(this.btnDom)
@@ -303,9 +312,9 @@ export default {
         document.webkitFullscreenElement || false;
     }
   },
-  destroyed() {
+  async destroyed() {
     if (jessibucaPlayer[this._uid]) {
-      jessibucaPlayer[this._uid].destroy();
+      await jessibucaPlayer[this._uid].destroy();
     }
     this.playing = false;
     this.loaded = false;
