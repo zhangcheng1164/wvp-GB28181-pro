@@ -93,8 +93,8 @@ export default {
       jessibucaPlayer[this._uid] = new window.JessibucaPro(Object.assign(
         {
           container: this.$refs.container,
-          showPerformance:true,
-          decoder:'static/js/jessibuca-pro-demo/decoder-pro-simd.js',
+          showPerformance:false,
+          decoder:'static/js/jessibuca-pro/decoder-pro-simd.js',
           videoBuffer: 0.1, // 缓存时长
           videoBufferDelay: 0.2, //
           text: "",
@@ -135,9 +135,8 @@ export default {
           showBandwidth: false,
           supportDblclickFullscreen: false,
           timeout: 10,
-          // useMSE: location.hostname !== "localhost" && location.protocol !== "https:",
           useOffscreen: false,
-          // useWCS: location.hostname === "localhost" || location.protocol === "https",
+          // 硬解方式，pro厂家建议固定为MSE
           useMSE: true,
           autoWasm: true,
           useSIMD: true,
