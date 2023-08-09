@@ -52,13 +52,13 @@ public class ApiStreamController {
     private IRedisCatchStorage redisCatchStorage;
 
     @Autowired
-    private IInviteStreamService inviteStreamService;
-
-    @Autowired
     private IDeviceService deviceService;
 
     @Autowired
     private IPlayService playService;
+
+    @Autowired
+    private IInviteStreamService inviteStreamService;
 
     /**
      * 实时直播 - 开始直播
@@ -92,7 +92,7 @@ public class ApiStreamController {
             result.put("error","device[ " + serial + " ]未找到");
             resultDeferredResult.setResult(result);
             return resultDeferredResult;
-        }else if (!device.isOnLine()) {
+        }else if (device.isOnLine()) {
             JSONObject result = new JSONObject();
             result.put("error","device[ " + code + " ]offline");
             resultDeferredResult.setResult(result);
@@ -133,11 +133,29 @@ public class ApiStreamController {
                     result.put("ChannelName", deviceChannel.getName());
                     result.put("ChannelCustomName", "");
                     result.put("FLV", inviteInfo.getStreamInfo().getFlv().getUrl());
+                    if(inviteInfo.getStreamInfo().getHttps_flv() != null) {
+                        result.put("HTTPS_FLV", inviteInfo.getStreamInfo().getHttps_flv().getUrl());
+                    }
                     result.put("WS_FLV", inviteInfo.getStreamInfo().getWs_flv().getUrl());
+                    if(inviteInfo.getStreamInfo().getWss_flv() != null) {
+                        result.put("WSS_FLV", inviteInfo.getStreamInfo().getWss_flv().getUrl());
+                    }
                     result.put("RTMP", inviteInfo.getStreamInfo().getRtmp().getUrl());
+                    if (inviteInfo.getStreamInfo().getRtmps() != null) {
+                        result.put("RTMPS", inviteInfo.getStreamInfo().getRtmps().getUrl());
+                    }
                     result.put("HLS", inviteInfo.getStreamInfo().getHls().getUrl());
+                    if (inviteInfo.getStreamInfo().getHttps_hls() != null) {
+                        result.put("HTTPS_HLS", inviteInfo.getStreamInfo().getHttps_hls().getUrl());
+                    }
                     result.put("RTSP", inviteInfo.getStreamInfo().getRtsp().getUrl());
+                    if (inviteInfo.getStreamInfo().getRtsps() != null) {
+                        result.put("RTSPS", inviteInfo.getStreamInfo().getRtsps().getUrl());
+                    }
                     result.put("WEBRTC", inviteInfo.getStreamInfo().getRtc().getUrl());
+                    if (inviteInfo.getStreamInfo().getRtcs() != null) {
+                        result.put("HTTPS_WEBRTC", inviteInfo.getStreamInfo().getRtcs().getUrl());
+                    }
                     result.put("CDN", "");
                     result.put("SnapURL", "");
                     result.put("Transport", device.getTransport());
