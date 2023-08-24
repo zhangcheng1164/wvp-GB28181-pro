@@ -50,7 +50,7 @@ export default {
     window.onerror = (msg) => {
       // console.error(msg)
     };
-    console.log(this._uid)
+    console.log('_uid: ', this._uid)
     let paramUrl = decodeURIComponent(this.$route.params.url)
     this.$nextTick(() => {
       this.updatePlayerDomSize()
@@ -144,6 +144,8 @@ export default {
           wasmDecodeAudioSyncVideo: true,
           wasmDecodeErrorReplay: true,
           wcsUseVideoRender: true,
+          // 使用worker请求websocket
+          demuxUseWorker:true,
         },
         options
         ));
@@ -257,6 +259,16 @@ export default {
           jessibucaPlayer[this._uid].play(url);
         });
       }
+
+      // 视频意外终端后自动重新播放
+      jessibucaPlayer[this._uid].on("playFailedAndPaused", (error) => {
+        console.log('---playFailedAndPaused--', error);
+
+        setTimeout(() => {
+          console.log('---auto replay----')
+          this.play(url);
+        }, 1000 * 5);
+      });
     },
     pause: function () {
       if (jessibucaPlayer[this._uid]) {
