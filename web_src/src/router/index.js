@@ -12,6 +12,7 @@ import map from '../components/map.vue'
 import login from '../components/Login.vue'
 import parentPlatformList from '../components/ParentPlatformList.vue'
 import cloudRecord from '../components/CloudRecord.vue'
+import cloudRecordDetail from '../components/CloudRecordDetail.vue'
 import mediaServerManger from '../components/MediaServerManger.vue'
 import web from '../components/setting/Web.vue'
 import sip from '../components/setting/Sip.vue'
@@ -128,6 +129,16 @@ export default new VueRouter({
             activePath: '/cloudRecord',
             breadcrumbs: [{ label: '云端录像' }]
           }
+        },
+        {
+          path: '/cloudRecordDetail/:app/:stream',
+          name: 'cloudRecordDetail',
+          component: cloudRecordDetail,
+        },
+        {
+          path: '/cloudRecordDetail/:mediaServerId/:app/:stream',
+          name: 'cloudRecordDetail',
+          component: cloudRecordDetail,
         },
         {
           path: '/mediaServerManger',
