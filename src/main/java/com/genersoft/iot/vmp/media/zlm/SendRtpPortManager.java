@@ -82,24 +82,50 @@ public class SendRtpPortManager {
         return getSendPort(startPort, endPort, sendIndexKey, sendRtpItemMap);
     }
 
+    /**
+     * zhangcheng
+     * 之前存在无法同时播放两路视频的问题？
+     * 分析日志中报错： "RTP推流失败: bindUdpSock failed on port:30205, err:address already in use, 参数：...."
+     * 在Redis中，存放着一个下一次推流会使用的其实端口号，key为 VM_MEDIA_SEND_RTP_PORT_000000_[MediaServiceId]
+     * 还存在很多key格式为 VMP_PLATFORM_SEND_RTP_INFO_000000_4560e442-6508-4a42-9c7e-526a5a92d742_37010100002000108213_37010000001311000002_37010100002000108211_37010000001311000002_f0a9129d1c3640411c7c1ba58998704e@192.168.108.213
+     * 的值，它们对应着每一个推流时的信息，其中就包括本地推流端口 和 上一级平台的收流端口。
+     * 每当下一次需要推流时，就会根据上面这些值找到下一个可用的本地端口，原本的逻辑大体的逻辑是，如果本次推流使用的端口为60200，那么缓存在redis中准备给下一次使用的值为 60200，
+     * 当下一次推流时，大概率就是选择这个60200作为本地推流端口，并将redis中的值更新为 60201。
+     * 但是不知什么原因，此时60201总是被占用了，这里跟ZLM的通信逻辑有关，暂不知原因？ 这样就导致下一次推流时，发送了 address already in use 的情况。
+     * 
+     * 为了暂时绕过这个问题，采取了一种比较笨的方式，就是将缓存的端口每次多加几次，比如加三次。这样假设本次使用的时60200，那么下次使用的就是60203，就不容易出问题了。
+     */
     private synchronized int getSendPort(int startPort, int endPort, String sendIndexKey, Map<Integer, SendRtpItem> sendRtpItemMap){
         RedisAtomicInteger redisAtomicInteger = new RedisAtomicInteger(sendIndexKey , redisTemplate.getConnectionFactory());
         if (redisAtomicInteger.get() < startPort) {
             redisAtomicInteger.set(startPort);
             return startPort;
         }else {
-            int port = redisAtomicInteger.getAndIncrement();
+        	// zhangcheng 
+        	logger.info("======连续将port自增四次之前========={}====", redisAtomicInteger.get());
+        	redisAtomicInteger.incrementAndGet(); // zhangcheng 连续三次自增是我加的
+        	redisAtomicInteger.incrementAndGet();
+        	redisAtomicInteger.incrementAndGet();
+        	
+        	int port = redisAtomicInteger.getAndIncrement();
+        	logger.info("======连续将port自增四次之后========={}====", redisAtomicInteger.get());
+
             if (port > endPort) {
                 redisAtomicInteger.set(startPort);
-                if (sendRtpItemMap.containsKey(startPort)) {
+                // zhangcheng 只要此次选中的port，在已经使用的端口前或者后，都重新计算
+                if (sendRtpItemMap.containsKey(startPort) || sendRtpItemMap.containsKey(startPort + 1) || sendRtpItemMap.containsKey(startPort - 1) ) {
                     return getSendPort(startPort, endPort, sendIndexKey, sendRtpItemMap);
                 }else {
+                	logger.info("=======最终选定的port {} ====", port);
                     return startPort;
                 }
             }
-            if (sendRtpItemMap.containsKey(port)) {
+            
+            // zhangcheng 只要此次选中的port，在已经使用的端口前或者后，都重新计算
+            if (sendRtpItemMap.containsKey(port) || sendRtpItemMap.containsKey(port + 1) || sendRtpItemMap.containsKey(port - 1)) {
                 return getSendPort(startPort, endPort, sendIndexKey, sendRtpItemMap);
             }else {
+            	logger.info("=======最终选定的port {} ====", port);
                 return port;
             }
         }

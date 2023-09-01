@@ -267,6 +267,14 @@ public class SIPCommander implements ISIPCommander {
      * @param event      hook订阅
      * @param errorEvent sip错误订阅
      */
+    /**
+     * zhangcheng
+     * 一共有三个回调事件，分别解释如下：
+     * 
+     * ZlmHttpHookSubscribe.Event event： 当下级平台向本级ZLM推流后，ZLM会回调 /on_stream_changed 接口，在该接口中，会触发此处注册的该事件
+     * SipSubscribe.Event okEvent： 当下级平台返回 Invite 200 OK后，触发该事件
+     * SipSubscribe.Event errorEvent： 本级平台发送Invite 请求出错时，触发该事件
+     */
     @Override
     public void playStreamCmd(MediaServerItem mediaServerItem, SSRCInfo ssrcInfo, Device device, String channelId,
                               ZlmHttpHookSubscribe.Event event, SipSubscribe.Event okEvent, SipSubscribe.Event errorEvent) throws InvalidArgumentException, SipException, ParseException {
@@ -278,8 +286,13 @@ public class SIPCommander implements ISIPCommander {
 
         logger.info("{} 分配的ZLM为: {} [{}:{}]", stream, mediaServerItem.getId(), mediaServerItem.getSdpIp(), ssrcInfo.getPort());
         HookSubscribeForStreamChange hookSubscribe = HookSubscribeFactory.on_stream_changed("rtp", stream, true, "rtsp", mediaServerItem.getId());
+        
+        // zhangcheng 此处的mediaServerItemInUse 和 hookParam 两个参数，会在 ZLM 回调 /on_stream_changed接口，在对应的controller方法中触发该事件时，传递进来
         subscribe.addSubscribe(hookSubscribe, (MediaServerItem mediaServerItemInUse, HookParam hookParam) -> {
             if (event != null) {
+            	// 当 on_stream_changed 事件触发的时候，调用此时注册的回调。
+            	// 什么时候触发？ zlm会回调 /index/hook/on_stream_changed ，回调此接口的时候，从 注册中心的那个map中找到此处注册的回调，然后执行。
+            	// ZLMHttpHookListener  onStreamChanged 
                 event.response(mediaServerItemInUse, hookParam);
                 subscribe.removeSubscribe(hookSubscribe);
             }
@@ -366,15 +379,33 @@ public class SIPCommander implements ISIPCommander {
 
 
         Request request = headerProvider.createInviteRequest(device, channelId, content.toString(), SipUtils.getNewViaTag(), SipUtils.getNewFromTag(), null, ssrcInfo.getSsrc(),sipSender.getNewCallIdHeader(sipLayer.getLocalIp(device.getLocalIp()),device.getTransport()));
+        // zhangcheng 此处就是本级向下级发送Invite sip指令的地方
         sipSender.transmitRequest(sipLayer.getLocalIp(device.getLocalIp()), request, (e -> {
             streamSession.remove(device.getDeviceId(), channelId, ssrcInfo.getStream());
             mediaServerService.releaseSsrc(mediaServerItem.getId(), ssrcInfo.getSsrc());
             errorEvent.response(e);
         }), e -> {
+        	/**
+        	 * zhangcheng
+        	 * 当收到下一级平台响应的 Invite 200 OK 后，再触发注册的okEvent之前，会向redis中写入一个 代表当前视频流会话的sessionTransition，
+        	 * 格式为 VMP_MEDIA_TRANSACTION_000000_[deviceId]_[channelId]_play_[streamId]
+        	 * 此会话事务代表当前连接，之前的逻辑会将此session中ssrc设置为 本机发送请求时携带的ssrc，这在需要修复ssrc时，造成真正使用的ssrc与redis缓存中的不一致，
+        	 * 所以修改为使用下一级平台Invite 200 OK 响应中返回的ssrc，就跟使用的一致了。
+        	 * 当然，我们此处逻辑要求 ssrc校验 一定需要勾选才行
+        	 */
             ResponseEvent responseEvent = (ResponseEvent) e.event;
             SIPResponse response = (SIPResponse) responseEvent.getResponse();
-            streamSession.put(device.getDeviceId(), channelId, "play", stream, ssrcInfo.getSsrc(), mediaServerItem.getId(), response,
+            
+            // zhangcheng 保存在 session事务中的ssrc应该是下一级平台Invite 200 OK 返回的ssrc，而不应该是Invite请求中的ssrc
+            String contentString = new String(responseEvent.getResponse().getRawContent());
+            String ssrcInResponse = SipUtils.getSsrcFromSdp(contentString);
+            
+            streamSession.put(device.getDeviceId(), channelId, "play", stream, ssrcInResponse, mediaServerItem.getId(), response,
                     InviteSessionType.PLAY);
+
+//            streamSession.put(device.getDeviceId(), channelId, "play", stream, ssrcInfo.getSsrc(), mediaServerItem.getId(), response,
+//            		InviteSessionType.PLAY);
+            
             okEvent.response(e);
         });
     }

@@ -327,6 +327,12 @@ public class ZLMHttpHookListener {
 
         JSONObject json = (JSONObject) JSON.toJSON(param);
         taskExecutor.execute(() -> {
+        	/**
+        	 * zhangcheng
+        	 * 当下一级平台向本级的ZLM推流后，本级的ZLM会回调本级 wvp的 /on_stream_changed
+        	 * 需要注意的时，ZLM会连续调用 /on_stream_changed 多次，因为有多种 视频流的格式，但是在调用 SIPCommander.playStreamCmd 时注册的第一个事件只会被调用一次。
+        	 * 注册事件时需要的第二个参数，时ZLM传递过来的。 
+        	 */
             ZlmHttpHookSubscribe.Event subscribe = this.subscribe.sendNotify(HookType.on_stream_changed, json);
             MediaServerItem mediaInfo = mediaServerService.getOne(param.getMediaServerId());
             if (mediaInfo == null) {
@@ -337,6 +343,7 @@ public class ZLMHttpHookListener {
                 subscribe.response(mediaInfo, param);
             }
 
+            // zhangcheng 触发事件后，下面还有很多逻辑，暂时没看明白
             List<OnStreamChangedHookParam.MediaTrack> tracks = param.getTracks();
             // TODO 重构此处逻辑
             boolean isPush = false;

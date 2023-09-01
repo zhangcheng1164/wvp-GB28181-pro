@@ -140,6 +140,25 @@ public class MediaServerServiceImpl implements IMediaServerService {
         }
     }
 
+    /*
+     * mediaServerService.openRTPServer(mediaServerItem, streamId, ssrc, device.isSsrcCheck(),  false, 0, false, device.getStreamModeForParam());
+     * 
+     * openRTPServer(
+     * MediaServerItem mediaServerItem  ---  mediaServerItem
+     * String streamId                  ---  streamId     
+     * String presetSsrc,               ---  ssrc 预设ssrc 最开始其实是null
+     * boolean ssrcCheck,               ---  device.isSsrcCheck()
+     * boolean isPlayback,              ---  false
+     * Integer port,                    ---  0 
+     * Boolean reUsePort,               ---  false
+     * Integer tcpMode                  ---  device.getStreamModeForParam() / UDP
+     * ) {
+     * 
+     * 问题： 发送 invite 请求的ssrc到底从哪里来的？
+     * 答案： 从redis ssrc池中随机pop的
+     * 
+     * openRTPServer 的作用是请求zlm获取一个端口通道
+     */
 
     @Override
     public SSRCInfo openRTPServer(MediaServerItem mediaServerItem, String streamId, String presetSsrc, boolean ssrcCheck,
@@ -156,6 +175,7 @@ public class MediaServerServiceImpl implements IMediaServerService {
             if (isPlayback) {
                 ssrc = ssrcFactory.getPlayBackSsrc(mediaServerItem.getId());
             }else {
+            	// zhangcheng 初始获取ssrc的地方，ssrc是从redis的ssrc池中随机pop出来的
                 ssrc = ssrcFactory.getPlaySsrc(mediaServerItem.getId());
             }
         }
@@ -169,11 +189,38 @@ public class MediaServerServiceImpl implements IMediaServerService {
             logger.warn("[openRTPServer] TCP被动/TCP主动收流时，默认关闭ssrc检验");
         }
         int rtpServerPort;
+        
+        // rtpEnable 多端口
+        /**
+         * 多端口和单端口 
+         * 我的理解： 类似与从主机直接访问虚机的vnc，主机中有多个端口，每个端口对应一个vnc流，这就叫多端口
+         * 而通过ovirt engine的proxy代理，所有vnc视频流都通过这个proxy端口发送，就是单端口。
+         */
         if (mediaServerItem.isRtpEnable()) {
-            rtpServerPort = zlmServerFactory.createRTPServer(mediaServerItem, streamId, (ssrcCheck && tcpMode == 0) ? Long.parseLong(ssrc) : 0, port, reUsePort, tcpMode);
+        	// zhangcheng 多端口的情况下，需要先向zlm申请一个端口
+            rtpServerPort = 
+            		zlmServerFactory.createRTPServer(
+            				mediaServerItem,
+            				streamId, 
+            				(ssrcCheck && tcpMode == 0) ? Long.parseLong(ssrc) : 0, 
+            				port, 
+            				reUsePort, 
+            				tcpMode
+            		);
+            
         } else {
+        	// zhangcheng 单端口模式直接使用 唯一的proxy端口
             rtpServerPort = mediaServerItem.getRtpProxyPort();
         }
+        
+        /**
+         * ssrcInfo 类似与下面这样
+         * {
+         * 		"port": 30372,  // 向zlm申请的端口 
+         * 		"ssrc": "0101004315",  // 获取的随机ssrc，后面还可能需要修正
+         * 		"stream": "37010100002000108212_37010000001311000002" // stream id
+         * }
+         */
         return new SSRCInfo(rtpServerPort, ssrc, streamId);
     }
 
@@ -212,6 +259,15 @@ public class MediaServerServiceImpl implements IMediaServerService {
             return;
         }
         ssrcFactory.releaseSsrc(mediaServerItemId, ssrc);
+    }
+
+    @Override
+    public void removeSsrc(String mediaServerItemId, String ssrc) {
+    	MediaServerItem mediaServerItem = getOne(mediaServerItemId);
+    	if (mediaServerItem == null || ssrc == null) {
+    		return;
+    	}
+    	ssrcFactory.removeSsrc(mediaServerItemId, ssrc);
     }
 
     /**

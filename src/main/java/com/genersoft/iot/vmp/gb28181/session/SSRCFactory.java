@@ -84,6 +84,25 @@ public class SSRCFactory {
         String redisKey = SSRC_INFO_KEY + userSetting.getServerId() + "_" + mediaServerId;
         redisTemplate.opsForSet().add(redisKey, sn);
     }
+    
+    /**
+     * 从池中删除某个特定的ssrc
+     * @param mediaServerId
+     * @param ssrc
+     * 
+     * 为什么需要从池中删除 ssrc?
+     * 当修正SSRC时，真正使用的SSRC是 下一级平台通过Invite 200 OK 返回的，此时并没有从redis中的 SSRC池中删除。需要手动删除，所以新增了这个方法。
+     * 
+     * SSRC 池保存在redis的 VMP_SSRC_INFO_000000_[serviceMeidaId]中
+     */
+    public void removeSsrc(String mediaServerId, String ssrc) {
+        if (ssrc == null) {
+            return;
+        }
+        String sn = ssrc.substring(1);
+        String redisKey = SSRC_INFO_KEY + userSetting.getServerId() + "_" + mediaServerId;
+        redisTemplate.opsForSet().remove(redisKey, sn);
+    }
 
     /**
      * 获取后四位数SN,随机数

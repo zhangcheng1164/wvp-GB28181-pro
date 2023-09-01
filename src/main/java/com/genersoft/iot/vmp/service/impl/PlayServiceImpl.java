@@ -551,6 +551,10 @@ public class PlayServiceImpl implements IPlayService {
     }
 
 
+    /**
+     * zhangcheng
+     * inviteOkHandler 会在Invite 200 OK 返回后被触发，这里主要的逻辑就是，需要修复SSRC
+     */
     private void InviteOKHandler(SipSubscribe.EventResult eventResult, SSRCInfo ssrcInfo, MediaServerItem mediaServerItem,
                                  Device device, String channelId, String timeOutTaskKey, ErrorCallback<Object> callback,
                                  InviteInfo inviteInfo, InviteSessionType inviteSessionType){
@@ -605,6 +609,14 @@ public class PlayServiceImpl implements IPlayService {
                                 "下级自定义了ssrc,重新设置收流信息失败", null);
 
                     }else {
+                    	// zhangcheng 更新缓存中的ssrc
+                    	// redis中invite的缓存key的格式是 VMP_INVITE:PLAY:[deviceId]:[channelId]:[streamId]:[ssrc]
+                    	// 关键就是要在修复ssrc后，让redis中的invite缓存的ssrc保持跟真正使用的ssrc一致。
+                    	inviteStreamService.updateInviteInfoForSSRC(inviteInfo, ssrcInResponse);
+                    	
+                    	// zhangcheng 需要将修正后的ssrc从池中删除
+                    	mediaServerService.removeSsrc(mediaServerItem.getId(), ssrcInResponse);
+                    	
                         ssrcInfo.setSsrc(ssrcInResponse);
                         inviteInfo.setSsrcInfo(ssrcInfo);
                         inviteInfo.setStream(ssrcInfo.getStream());
@@ -989,3 +1001,4 @@ public class PlayServiceImpl implements IPlayService {
     }
 
 }
+

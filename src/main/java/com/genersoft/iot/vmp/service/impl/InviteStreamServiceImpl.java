@@ -257,7 +257,14 @@ public class InviteStreamServiceImpl implements IInviteStreamService {
                 ":" + inviteInfo.getDeviceId() +
                 ":" + inviteInfo.getChannelId() +
                 ":" + inviteInfo.getStream() +
-                ":" + inviteInfo.getSsrcInfo().getSsrc();
+                ":" + ssrc;
+        		// ":" + inviteInfo.getSsrcInfo().getSsrc();
+        		/**
+        		 * zhangcheng 解释上面的修改
+        		 * 这个方法是用来在修复SSRC时，删除包含旧的SSRC的redis缓存，然后新建一个包含新SSRC的缓存，
+        		 * 但是之前的逻辑使用的redis key在删除旧的，新建新的的时候，并没有更新redis key，这里修改的目的就是使用真正使用的ssrc作为redis 的key
+        		 */
+        
         if (inviteInfoInDb.getSsrcInfo() != null) {
             inviteInfoInDb.getSsrcInfo().setSsrc(ssrc);
         }
