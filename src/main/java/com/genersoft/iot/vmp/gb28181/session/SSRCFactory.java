@@ -84,6 +84,20 @@ public class SSRCFactory {
         String redisKey = SSRC_INFO_KEY + userSetting.getServerId() + "_" + mediaServerId;
         redisTemplate.opsForSet().add(redisKey, sn);
     }
+    
+    /**
+     * 从池中删除某个特定的ssrc
+     * @param mediaServerId
+     * @param ssrc
+     */
+    public void removeSsrc(String mediaServerId, String ssrc) {
+        if (ssrc == null) {
+            return;
+        }
+        String sn = ssrc.substring(1);
+        String redisKey = SSRC_INFO_KEY + userSetting.getServerId() + "_" + mediaServerId;
+        redisTemplate.opsForSet().remove(redisKey, sn);
+    }
 
     /**
      * 获取后四位数SN,随机数

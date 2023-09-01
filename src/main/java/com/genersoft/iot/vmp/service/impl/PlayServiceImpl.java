@@ -605,6 +605,12 @@ public class PlayServiceImpl implements IPlayService {
                                 "下级自定义了ssrc,重新设置收流信息失败", null);
 
                     }else {
+                    	// zhangcheng 更新缓存中的ssrc
+                    	inviteStreamService.updateInviteInfoForSSRC(inviteInfo, ssrcInResponse);
+                    	
+                    	// zhangcheng 需要将修正后的ssrc从池中删除
+                    	mediaServerService.removeSsrc(mediaServerItem.getId(), ssrcInResponse);
+                    	
                         ssrcInfo.setSsrc(ssrcInResponse);
                         inviteInfo.setSsrcInfo(ssrcInfo);
                         inviteInfo.setStream(ssrcInfo.getStream());

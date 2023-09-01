@@ -373,8 +373,16 @@ public class SIPCommander implements ISIPCommander {
         }), e -> {
             ResponseEvent responseEvent = (ResponseEvent) e.event;
             SIPResponse response = (SIPResponse) responseEvent.getResponse();
-            streamSession.put(device.getDeviceId(), channelId, "play", stream, ssrcInfo.getSsrc(), mediaServerItem.getId(), response,
+            
+            // zhangcheng 保存在 session事务中的ssrc应该是下一级平台Invite 200 OK 返回的ssrc，而不应该是Invite请求中的ssrc
+            String contentString = new String(responseEvent.getResponse().getRawContent());
+            String ssrcInResponse = SipUtils.getSsrcFromSdp(contentString);
+            
+            streamSession.put(device.getDeviceId(), channelId, "play", stream, ssrcInResponse, mediaServerItem.getId(), response,
                     InviteSessionType.PLAY);
+
+//            streamSession.put(device.getDeviceId(), channelId, "play", stream, ssrcInfo.getSsrc(), mediaServerItem.getId(), response,
+//            		InviteSessionType.PLAY);
             okEvent.response(e);
         });
     }

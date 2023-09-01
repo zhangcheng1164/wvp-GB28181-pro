@@ -214,6 +214,15 @@ public class MediaServerServiceImpl implements IMediaServerService {
         ssrcFactory.releaseSsrc(mediaServerItemId, ssrc);
     }
 
+    @Override
+    public void removeSsrc(String mediaServerItemId, String ssrc) {
+    	MediaServerItem mediaServerItem = getOne(mediaServerItemId);
+    	if (mediaServerItem == null || ssrc == null) {
+    		return;
+    	}
+    	ssrcFactory.removeSsrc(mediaServerItemId, ssrc);
+    }
+
     /**
      * zlm 重启后重置他的推流信息， TODO 给正在使用的设备发送停止命令
      */
